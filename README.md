@@ -4,6 +4,9 @@ A 2D top-down action RPG inspired by *The Legend of Zelda: Link's Awakening*, fe
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 ![Zero Dependencies](https://img.shields.io/badge/dependencies-none-brightgreen.svg)
+[![Play Live](https://img.shields.io/badge/🎮%20Play%20Online-GitHub%20Pages-blue?style=for-the-badge)](https://jakesky14.github.io/echoes-of-the-awakening-isle/)
+
+> 🎮 **Play the Live Game**: [https://jakesky14.github.io/echoes-of-the-awakening-isle/](https://jakesky14.github.io/echoes-of-the-awakening-isle/)
 
 ---
 
