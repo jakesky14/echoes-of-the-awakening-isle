@@ -1,0 +1,13 @@
+{
+  "name": "echoes-of-awakening",
+  "version": "1.0.0",
+  "description": "Top-down open world action RPG inspired by The Legend of Zelda: Link's Awakening",
+  "type": "module",
+  "scripts": {
+    "start": "python3 -m http.server 8080",
+    "test": "node tests/game-test.js"
+  },
+  "keywords": ["rpg", "zelda", "action-rpg", "canvas", "game"],
+  "author": "",
+  "license": "MIT"
+}

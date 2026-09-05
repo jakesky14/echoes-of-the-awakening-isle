@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Echoes of the Awakening Isle - Top-Down Action RPG</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>ECHOES OF THE AWAKENING ISLE</h1>
+    <div class="subtitle">A Top-Down Open World Action RPG — Aimed Attacks & Dodge Combat</div>
+  </header>
+
+  <main id="gameContainer">
+    <div class="game-toolbar">
+      <button id="muteBtn" class="tool-btn">🔊 Sound: ON</button>
+      <button id="fullscreenBtn" class="tool-btn">⛶ Fullscreen</button>
+    </div>
+    <canvas id="gameCanvas" width="640" height="360"></canvas>
+  </main>
+
+  <section class="controls-guide">
+    <div class="card">
+      <h3>🗡️ Sword & Aim</h3>
+      <ul>
+        <li><span class="key">Mouse</span>: Aim attacks & abilities</li>
+        <li><span class="key">L-Click</span>: 3-Hit sword slash combo</li>
+        <li><span class="key">Hold L-Click</span>: Charged 360° Spin Attack!</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>💨 Dodge & Defense</h3>
+      <ul>
+        <li><span class="key">Space</span> / <span class="key">Shift</span>: Dodge Roll (i-frames!)</li>
+        <li><span class="key">E</span>: Shield Deflection (deflect rocks)</li>
+        <li>Dodge through shockwaves & charge attacks!</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>🏹 Bow & Items</h3>
+      <ul>
+        <li><span class="key">R-Click</span> / <span class="key">Q</span>: Aim & shoot Bow</li>
+        <li><span class="key">E</span>: Lift & throw pots / Open chests</li>
+        <li><span class="key">Tab</span> / <span class="key">I</span>: Inventory & Quest log</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>🗺️ Exploration</h3>
+      <ul>
+        <li><span class="key">WASD</span>: 8-Direction movement</li>
+        <li>Slash bushes & smash pots for Rupees</li>
+        <li>Explore Village, Wilds, Forest & Dungeon!</li>
+      </ul>
+    </div>
+  </section>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
