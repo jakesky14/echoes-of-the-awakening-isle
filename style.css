@@ -62,6 +62,10 @@ h1 {
   cursor: crosshair;
 }
 
+#gameCanvas:focus {
+  outline: none;
+}
+
 .game-toolbar {
   position: absolute;
   top: 12px;

@@ -73,8 +73,10 @@ export class Player extends Entity {
     const input = game.input;
     input.updateWorldMouse(game.camera);
 
-    // Calculate aim angle from player center to mouse crosshair
-    this.aimAngle = input.getAimAngle(this.x, this.y);
+    // Aim angle: tracks mouse cursor when mouse is used, or movement direction when using keyboard only
+    if (input.hasMovedMouse) {
+      this.aimAngle = input.getAimAngle(this.x, this.y);
+    }
 
     // Stamina regeneration
     if (!this.isDodging && !this.isCharging) {
@@ -94,11 +96,31 @@ export class Player extends Entity {
       }
     }
 
+    // Key command mappings
+    const dodgeJustPressed = input.isJustPressed(' ') || input.isJustPressed('space') ||
+                             input.isJustPressed('shift') || input.isJustPressed('k') ||
+                             input.isJustPressed('keyk') || input.isJustPressed('x') || input.isJustPressed('keyx');
+
+    const attackDown = input.isLeftMouseDown() || input.isDown('j') || input.isDown('keyj') ||
+                       input.isDown('z') || input.isDown('keyz');
+
+    const attackJustPressed = input.isLeftJustPressed() || input.isJustPressed('j') || input.isJustPressed('keyj') ||
+                              input.isJustPressed('z') || input.isJustPressed('keyz');
+
+    const bowJustPressed = input.isRightJustPressed() || input.isJustPressed('q') || input.isJustPressed('keyq') ||
+                           input.isJustPressed('l') || input.isJustPressed('keyl');
+
+    const interactJustPressed = input.isJustPressed('e') || input.isJustPressed('keye') ||
+                                input.isJustPressed('f') || input.isJustPressed('keyf') ||
+                                input.isJustPressed('enter');
+
     // --- State 1: Dodge Rolling (Invulnerability Frames) ---
     if (this.isDodging) {
       this.dodgeTimer -= dt;
       this.x += this.dodgeDirX * this.dodgeSpeed * dt;
+      this.resolveTileCollision(game.tileMap);
       this.y += this.dodgeDirY * this.dodgeSpeed * dt;
+      this.resolveTileCollision(game.tileMap);
 
       // Trail dust particles
       if (Math.random() < 0.6) {
@@ -138,10 +160,21 @@ export class Player extends Entity {
     }
 
     if (move.dx !== 0 || move.dy !== 0) {
+      this.facingAngle = Math.atan2(move.dy, move.dx);
+      if (!input.hasMovedMouse) {
+        this.aimAngle = this.facingAngle;
+      }
+
       this.vx = move.dx * currentSpeed;
       this.vy = move.dy * currentSpeed;
+
+      // Axis-separated movement & collision for silky smooth wall sliding
       this.x += this.vx * dt;
+      this.resolveTileCollision(game.tileMap);
+
       this.y += this.vy * dt;
+      this.resolveTileCollision(game.tileMap);
+
       this.walkAnimTimer += dt * 10;
     } else {
       this.vx = 0;
@@ -150,7 +183,7 @@ export class Player extends Entity {
     }
 
     // --- Action: Dodge Roll Trigger ---
-    if ((input.isJustPressed(' ') || input.isJustPressed('shift')) && this.dodgeCooldown <= 0 && !this.isDodging) {
+    if (dodgeJustPressed && this.dodgeCooldown <= 0 && !this.isDodging) {
       if (this.stamina >= 25 && !this.staminaExhausted) {
         this.startDodgeRoll(move, game);
         this.updateBasePhysics(dt, game);
@@ -160,7 +193,7 @@ export class Player extends Entity {
 
     // --- Action: Throw Carried Prop ---
     if (this.carriedProp) {
-      if (input.isLeftJustPressed() || input.isJustPressed('e')) {
+      if (attackJustPressed || interactJustPressed) {
         this.carriedProp.throw(this.aimAngle);
         this.carriedProp = null;
         sound.swordSlash(0);
@@ -170,7 +203,7 @@ export class Player extends Entity {
     }
 
     // --- Action: Pick Up Prop or Interact with Chest/NPC ---
-    if (input.isJustPressed('e')) {
+    if (interactJustPressed) {
       if (this.tryInteract(game)) {
         this.updateBasePhysics(dt, game);
         return;
@@ -178,17 +211,18 @@ export class Player extends Entity {
     }
 
     // --- Action: Shield Defense ---
-    this.isShielding = input.isDown('e') || input.isRightMouseDown() && !this.hasBow;
+    this.isShielding = input.isDown('e') || input.isDown('keye') || input.isDown('u') ||
+                       input.isDown('keyu') || (input.isRightMouseDown() && !this.hasBow);
 
-    // --- Action: Bow & Arrow (Right Click or Q) ---
-    if (this.hasBow && (input.isRightJustPressed() || input.isJustPressed('q')) && this.bowCooldown <= 0) {
+    // --- Action: Bow & Arrow (Right Click, Q, or L) ---
+    if (this.hasBow && bowJustPressed && this.bowCooldown <= 0) {
       if (this.arrows > 0) {
         this.fireArrow(game);
       }
     }
 
-    // --- Action: Melee Slash & Charged Spin Attack ---
-    if (input.isLeftMouseDown() && !this.isAttacking) {
+    // --- Action: Melee Slash & Charged Spin Attack (Left Click, J, or Z) ---
+    if (attackDown && !this.isAttacking) {
       this.isCharging = true;
       this.chargeTimer += dt;
 

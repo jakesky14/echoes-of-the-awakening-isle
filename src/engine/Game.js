@@ -38,10 +38,11 @@ export class Game {
     this.viewportWidth = canvas.width;
     this.viewportHeight = canvas.height;
 
-    // State
-    this.state = GAME_STATE.TITLE;
+    // State: Start immediately in PLAYING mode so movement works on first frame
+    this.state = GAME_STATE.PLAYING;
     this.lastTime = 0;
     this.awardBanner = null;
+    this.titleBannerTimer = 5.0;
 
     // Core Systems
     this.input = new InputManager(canvas);
@@ -217,14 +218,24 @@ export class Game {
   }
 
   update(dt) {
-    // --- 1. TITLE SCREEN ---
+    // --- 0. INTRO TITLE BANNER TIMER ---
+    if (this.titleBannerTimer > 0) {
+      this.titleBannerTimer -= dt;
+      if (this.player.vx !== 0 || this.player.vy !== 0) {
+        this.titleBannerTimer = Math.min(this.titleBannerTimer, 0.8);
+      }
+    }
+
+    // --- 1. TITLE SCREEN (Any key or click starts immediately) ---
     if (this.state === GAME_STATE.TITLE) {
-      if (this.input.isJustPressed(' ') || this.input.isJustPressed('enter') || this.input.isLeftJustPressed()) {
+      if (this.input.isAnyKeyDown() || this.input.isLeftJustPressed() || this.input.isRightJustPressed()) {
         this.state = GAME_STATE.PLAYING;
         sound.chestFanfare();
         sound.playMusic('village');
+        // Do not return; immediately process gameplay so first keystroke moves character!
+      } else {
+        return;
       }
-      return;
     }
 
     // --- 2. GAME OVER SCREEN ---
@@ -374,10 +385,12 @@ export class Game {
     // 7. Particle FX (dust, sparks, slash arcs, explosions)
     this.particles.render(this.ctx, this.camera);
 
-    // 8. HUD & Crosshair
-    this.hud.render(this.ctx, this);
+    // 9. Intro Title Floating Banner
+    if (this.titleBannerTimer > 0) {
+      this.renderIntroBanner();
+    }
 
-    // 9. Item Award Banner
+    // 10. Item Award Banner
     if (this.awardBanner) {
       this.renderAwardBanner();
     }
@@ -446,6 +459,34 @@ export class Game {
     }
 
     this.ctx.textAlign = 'left';
+  }
+
+  renderIntroBanner() {
+    const w = this.viewportWidth;
+    const cx = w / 2;
+    const cy = 40;
+    const alpha = Math.min(1, this.titleBannerTimer);
+
+    this.ctx.save();
+    this.ctx.globalAlpha = alpha;
+
+    // Header banner box
+    this.ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+    this.ctx.fillRect(cx - 250, cy - 20, 500, 42);
+    this.ctx.strokeStyle = '#f1c40f';
+    this.ctx.lineWidth = 2;
+    this.ctx.strokeRect(cx - 250, cy - 20, 500, 42);
+
+    this.ctx.fillStyle = '#f1c40f';
+    this.ctx.font = 'bold 12px monospace';
+    this.ctx.textAlign = 'center';
+    this.ctx.fillText("⚔️ ECHOES OF THE AWAKENING ISLE ⚔️", cx, cy - 4);
+
+    this.ctx.fillStyle = '#38bdf8';
+    this.ctx.font = '10px monospace';
+    this.ctx.fillText("Move: [WASD / Arrows]  |  Attack: [L-Click / J]  |  Dodge: [Space / K]", cx, cy + 12);
+
+    this.ctx.restore();
   }
 
   renderAwardBanner() {

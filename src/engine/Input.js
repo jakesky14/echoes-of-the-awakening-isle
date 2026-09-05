@@ -1,15 +1,17 @@
-// Input Manager for Keyboard, Mouse Aiming, and Gamepad
+// Universal Input Manager supporting Keyboard (WASD, Arrows, e.code, e.keyCode), Mouse Aiming, and Gamepad
 
 export class InputManager {
   constructor(canvas) {
     this.canvas = canvas;
     this.keys = {};
     this.keysJustPressed = {};
+    this.hasMovedMouse = false;
+
     this.mouse = {
-      x: 0,
-      y: 0,
-      worldX: 0,
-      worldY: 0,
+      x: 320,
+      y: 180,
+      worldX: 384 + 40,
+      worldY: 1408,
       leftDown: false,
       rightDown: false,
       leftJustPressed: false,
@@ -20,65 +22,132 @@ export class InputManager {
     this.setupListeners();
   }
 
-  setupListeners() {
-    window.addEventListener('keydown', (e) => {
-      const k = e.key.toLowerCase();
-      if (!this.keys[k]) {
-        this.keysJustPressed[k] = true;
+  normalizeKey(keyStr) {
+    if (!keyStr) return '';
+    return String(keyStr).toLowerCase().replace(/\s+/g, '');
+  }
+
+  registerKeyDown(k, code, keyCode) {
+    const keysToSet = [];
+    if (k) keysToSet.push(this.normalizeKey(k));
+    if (code) keysToSet.push(this.normalizeKey(code));
+    if (keyCode) keysToSet.push(String(keyCode));
+
+    for (const key of keysToSet) {
+      if (!this.keys[key]) {
+        this.keysJustPressed[key] = true;
       }
-      this.keys[k] = true;
-      if ([' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'tab'].includes(k)) {
+      this.keys[key] = true;
+    }
+  }
+
+  registerKeyUp(k, code, keyCode) {
+    const keysToUnset = [];
+    if (k) keysToUnset.push(this.normalizeKey(k));
+    if (code) keysToUnset.push(this.normalizeKey(code));
+    if (keyCode) keysToUnset.push(String(keyCode));
+
+    for (const key of keysToUnset) {
+      this.keys[key] = false;
+      this.keysJustPressed[key] = false;
+    }
+  }
+
+  setupListeners() {
+    if (typeof window === 'undefined') return;
+    const onKeyDown = (e) => {
+      this.registerKeyDown(e.key, e.code, e.keyCode);
+
+      // Prevent scrolling page when pressing game keys
+      const code = e.code ? e.code.toLowerCase() : '';
+      const key = e.key ? e.key.toLowerCase() : '';
+      if (
+        ['space', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'tab'].includes(code) ||
+        [' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'tab'].includes(key)
+      ) {
         e.preventDefault();
       }
+    };
+
+    const onKeyUp = (e) => {
+      this.registerKeyUp(e.key, e.code, e.keyCode);
+    };
+
+    // Listen on both window and canvas to ensure keystrokes are always received
+    window.addEventListener('keydown', onKeyDown, { passive: false });
+    window.addEventListener('keyup', onKeyUp);
+    if (this.canvas) {
+      this.canvas.addEventListener('keydown', onKeyDown, { passive: false });
+      this.canvas.addEventListener('keyup', onKeyUp);
+    }
+
+    // Reset all pressed keys if window loses focus (prevent sticky running)
+    window.addEventListener('blur', () => {
+      this.keys = {};
+      this.keysJustPressed = {};
     });
 
-    window.addEventListener('keyup', (e) => {
-      const k = e.key.toLowerCase();
-      this.keys[k] = false;
-      this.keysJustPressed[k] = false;
-    });
-
-    this.canvas.addEventListener('mousemove', (e) => {
+    // Mouse movement tracking
+    const onMouseMove = (e) => {
+      this.hasMovedMouse = true;
+      if (!this.canvas) return;
       const rect = this.canvas.getBoundingClientRect();
       const scaleX = this.canvas.width / rect.width;
       const scaleY = this.canvas.height / rect.height;
 
-      this.mouse.x = (e.clientX - rect.left) * scaleX;
-      this.mouse.y = (e.clientY - rect.top) * scaleY;
-    });
+      this.mouse.x = Math.max(0, Math.min(this.canvas.width, (e.clientX - rect.left) * scaleX));
+      this.mouse.y = Math.max(0, Math.min(this.canvas.height, (e.clientY - rect.top) * scaleY));
+    };
 
-    this.canvas.addEventListener('mousedown', (e) => {
-      if (e.button === 0) {
-        this.mouse.leftDown = true;
-        this.mouse.leftJustPressed = true;
-      } else if (e.button === 2) {
-        this.mouse.rightDown = true;
-        this.mouse.rightJustPressed = true;
-      }
-      e.preventDefault();
-    });
+    window.addEventListener('mousemove', onMouseMove);
+
+    // Mouse clicks on canvas and window
+    if (this.canvas) {
+      this.canvas.addEventListener('mousedown', (e) => {
+        this.canvas.focus();
+        if (e.button === 0) {
+          this.mouse.leftDown = true;
+          this.mouse.leftJustPressed = true;
+        } else if (e.button === 2) {
+          this.mouse.rightDown = true;
+          this.mouse.rightJustPressed = true;
+        }
+        e.preventDefault();
+      });
+    }
 
     window.addEventListener('mouseup', (e) => {
       if (e.button === 0) this.mouse.leftDown = false;
       if (e.button === 2) this.mouse.rightDown = false;
     });
 
-    this.canvas.addEventListener('contextmenu', (e) => {
-      e.preventDefault();
-    });
+    if (this.canvas) {
+      this.canvas.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+      });
+    }
   }
 
   updateWorldMouse(camera) {
-    this.mouse.worldX = this.mouse.x + camera.x;
-    this.mouse.worldY = this.mouse.y + camera.y;
+    this.mouse.worldX = this.mouse.x + camera.getRenderX();
+    this.mouse.worldY = this.mouse.y + camera.getRenderY();
   }
 
   isDown(key) {
-    return !!this.keys[key.toLowerCase()];
+    const k = this.normalizeKey(key);
+    return !!this.keys[k];
   }
 
   isJustPressed(key) {
-    return !!this.keysJustPressed[key.toLowerCase()];
+    const k = this.normalizeKey(key);
+    return !!this.keysJustPressed[k];
+  }
+
+  isAnyKeyDown() {
+    for (const k in this.keys) {
+      if (this.keys[k]) return true;
+    }
+    return false;
   }
 
   isLeftMouseDown() {
@@ -101,12 +170,28 @@ export class InputManager {
     let dx = 0;
     let dy = 0;
 
-    if (this.isDown('w') || this.isDown('arrowup')) dy -= 1;
-    if (this.isDown('s') || this.isDown('arrowdown')) dy += 1;
-    if (this.isDown('a') || this.isDown('arrowleft')) dx -= 1;
-    if (this.isDown('d') || this.isDown('arrowright')) dx += 1;
+    // Up: W, ArrowUp, KeyW, Z (AZERTY), KeyZ, KeyCode 87, KeyCode 38
+    const up = this.isDown('w') || this.isDown('keyw') || this.isDown('arrowup') ||
+               this.isDown('z') || this.isDown('keyz') || this.isDown('87') || this.isDown('38');
 
-    // Normalize diagonal movement
+    // Down: S, ArrowDown, KeyS, KeyCode 83, KeyCode 40
+    const down = this.isDown('s') || this.isDown('keys') || this.isDown('arrowdown') ||
+                 this.isDown('83') || this.isDown('40');
+
+    // Left: A, ArrowLeft, KeyA, Q (AZERTY), KeyQ, KeyCode 65, KeyCode 37
+    const left = this.isDown('a') || this.isDown('keya') || this.isDown('arrowleft') ||
+                 this.isDown('q') || this.isDown('keyq') || this.isDown('65') || this.isDown('37');
+
+    // Right: D, ArrowRight, KeyD, KeyCode 68, KeyCode 39
+    const right = this.isDown('d') || this.isDown('keyd') || this.isDown('arrowright') ||
+                  this.isDown('68') || this.isDown('39');
+
+    if (up) dy -= 1;
+    if (down) dy += 1;
+    if (left) dx -= 1;
+    if (right) dx += 1;
+
+    // Normalize diagonal movement speed
     if (dx !== 0 && dy !== 0) {
       const invLen = 1 / Math.SQRT2;
       dx *= invLen;

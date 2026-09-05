@@ -10,7 +10,7 @@ export class InventoryScreen {
   }
 
   update(input) {
-    if (input.isJustPressed('tab') || input.isJustPressed('i')) {
+    if (input.isJustPressed('tab') || input.isJustPressed('i') || input.isJustPressed('escape')) {
       this.toggle();
     }
   }

@@ -53,8 +53,9 @@ export class DialogueSystem {
       }
     }
 
-    // Advance dialogue on Space / Enter / Left Click / E
-    if (input.isJustPressed(' ') || input.isJustPressed('enter') || input.isJustPressed('e') || input.isLeftJustPressed()) {
+    // Advance dialogue on Space / Enter / Left Click / E / F / Escape
+    if (input.isJustPressed(' ') || input.isJustPressed('space') || input.isJustPressed('enter') ||
+        input.isJustPressed('e') || input.isJustPressed('f') || input.isJustPressed('escape') || input.isLeftJustPressed()) {
       if (!this.isPageComplete) {
         // Skip typewriter immediately to end of page
         this.displayedText = currentFullText;

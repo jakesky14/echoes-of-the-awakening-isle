@@ -45,6 +45,44 @@ console.log('--- RUNNING ACTION RPG ENGINE TESTS ---');
   console.log('✓ Physics & Arc Targeting Passed');
 }
 
+// 2b. Universal Keyboard Input & Movement Vector Test
+{
+  console.log('Test 2b: Keyboard Key Codes & Movement Vectors...');
+  const { InputManager } = await import('../src/engine/Input.js');
+  const input = new InputManager(null);
+
+  // Test standard WASD
+  input.registerKeyDown('w', 'KeyW', 87);
+  let move = input.getMovementVector();
+  assert.strictEqual(move.dy, -1, 'W must move Up');
+  assert.strictEqual(move.dx, 0, 'W has no horizontal movement');
+  input.registerKeyUp('w', 'KeyW', 87);
+
+  // Test Arrow Keys
+  input.registerKeyDown('ArrowRight', 'ArrowRight', 39);
+  move = input.getMovementVector();
+  assert.strictEqual(move.dx, 1, 'ArrowRight must move Right');
+  assert.strictEqual(move.dy, 0, 'ArrowRight has no vertical movement');
+  input.registerKeyUp('ArrowRight', 'ArrowRight', 39);
+
+  // Test AZERTY (Z for Up, Q for Left)
+  input.registerKeyDown('z', 'KeyZ', 90);
+  input.registerKeyDown('q', 'KeyQ', 81);
+  move = input.getMovementVector();
+  assert.strictEqual(move.dy < 0, true, 'Z must move Up on AZERTY');
+  assert.strictEqual(move.dx < 0, true, 'Q must move Left on AZERTY');
+  input.registerKeyUp('z', 'KeyZ', 90);
+  input.registerKeyUp('q', 'KeyQ', 81);
+
+  // Test e.code alone (when IME active)
+  input.registerKeyDown('Process', 'KeyS', 229);
+  move = input.getMovementVector();
+  assert.strictEqual(move.dy, 1, 'KeyS must move Down even during IME composition');
+  input.registerKeyUp('Process', 'KeyS', 229);
+
+  console.log('✓ Universal Keyboard Input & Movement Vectors Passed');
+}
+
 // 3. Mock Game Context for Actor Testing
 function createMockGame() {
   const tiles = buildWorldMap();
